@@ -66,123 +66,36 @@ def tobs():
 @app.route("/api/v1.0/<start>")
 def start_only(start):
     start_date = start.replace("-","")
-    amq_list = []
+    start_list = []
     for a in all_measurements_query:
         standardized_date = a[0].replace("-","")
         if start_date <= standardized_date:
-            amq_list.append(a[1])
-    minimum = min(amq_list)
-    total = sum(amq_list)
-    length = len(amq_list)
+            start_list.append(a[1])
+    minimum = min(start_list)
+    total = sum(start_list)
+    length = len(start_list)
     average = total/length
-    maximum = max(amq_list)
+    maximum = max(start_list)
     final_list = [minimum,average,maximum]
     return jsonify(final_list)
 
-# @app.route("/api/v1.0/<start>")
-# def start_only(start):
-#     standardized_date = start.replace("-","")
-#     all_measurements_query = session.query(Measurement.date,Measurement.tobs).\
-#         filter(Measurement.date >= start).all()
-#     for a in all_measurements_query:
-#         search_term = a[0].replace("-","")
-#         if standardized_date == search_term:
-#             date_temp_list = []
-#             date_temp_list.append(a[1])
-#             date_temp_list.append(a[2])
-#             date_temp_list.append(a[3])
-#             return(
-#                 jsonify(date_temp_list)
-#                 # f"Starting from {start}, the minimum temp was {min_temp},<br/>"
-#                 # f"the average temp was {avg_temp}, and the max temp was {max_temp}."
-#             )
-#     return "Nope, didn't work..."
+@app.route("/api/v1.0/<start>/<end>")
+def start_and_end(start,end):
+    start_date = start.replace("-","")
+    end_date = end.replace("-","")
+    startend_list = []
+    for a in all_measurements_query:
+        standardized_date = a[0].replace("-","")
+        if start_date <= standardized_date:
+            if end_date >= standardized_date:
+                startend_list.append(a[1])
+    minimum = min(startend_list)
+    total = sum(startend_list)
+    length = len(startend_list)
+    average = total/length
+    maximum = max(startend_list)
+    final_se_list = [minimum,average,maximum]
+    return jsonify(final_se_list)
 
 if __name__ == "__main__":
     app.run(debug=True)
-
-# PRACTICE CODE
-# hello_dict = [{"Hello":"World"},{"Hello":"Portland"}]
-
-# justice_league_members = [
-#     {"superhero": "Aquaman", "real_name": "Arthur Curry"},
-#     {"superhero": "Batman", "real_name": "Bruce Wayne"},
-#     {"superhero": "Cyborg", "real_name": "Victor Stone"},
-#     {"superhero": "Flash", "real_name": "Barry Allen"},
-#     {"superhero": "Green Lantern", "real_name": "Hal Jordan"},
-#     {"superhero": "Superman", "real_name": "Clark Kent/Kal-El"},
-#     {"superhero": "Wonder Woman", "real_name": "Princess Diana"}
-# ]
-
-# @app.route("/")
-# def home():
-#     print("Operation: Successful")
-#     return (
-#         "You made it home!<br/>"
-#         "Here are links to all pages.<br/>"
-#         f"<a href='/about'>About</a><br/>"
-#         f"<a href='/contact'>Contact</a><br/>"
-#         f"<a href='/jsonified'>Jsonified</a><br/>"
-#         f"<a href='/api/v1.0/justice-league'>Justice League</a><br/>"
-#         f"Welcome to the Justice League API!<br/>"
-#         f"Available Routes:<br/>"
-#         f"<a href='/api/v1.0/justice-league'>All Heros</a><br/>"
-#         f"<a href='/api/v1.0/justice-league/real_name/Arthur%20Curry'>Arthur Curry</a><br/>"
-#         f"<a href='/api/v1.0/justice-league/real_name/Bruce%20Wayne'>Bruce Wayne</a><br/>"
-#         f"<a href='/api/v1.0/justice-league/real_name/Victor%20Stone'>Victor Stone</a><br/>"
-#         f"<a href='/api/v1.0/justice-league/real_name/Barry%20Allen'>Barry Allen</a><br/>"
-#         f"<a href='/api/v1.0/justice-league/real_name/Hal%20Jordan'>Hal Jordan</a><br/>"
-#         f"<a href='/api/v1.0/justice-league/real_name/Clark%20Kent'>Clark Kent</a><br/>"
-#         f"<a href='/api/v1.0/justice-league/real_name/Princess%20Diana'>Princess Diana</a>"
-#     )
-# @app.route("/about")
-# def about():
-#     print("Operation: Successful 'About' page location")
-
-#     name = "Brock"
-#     location = "Portland, OR"
-
-#     return (
-#         f"My name is {name} and I am located in {location}.<br/>"
-#         "Click below to return to home page.<br/>"
-#         f"<a href='/'>Home</a>"
-#     )
-
-# @app.route("/contact")
-# def contact():
-#     email = "brock.vriesman@gmail.com"
-
-#     return (
-#         f"If you want to get a hold of me, email me at {email}."
-#         "Click below to return to home page.<br/>"
-#         f"<a href='/'>Home</a>"
-#     )
-
-# @app.route("/jsonified")
-# def jsonified():
-#     return jsonify(hello_dict)
-
-# @app.route("/api/v1.0/justice-league")
-# def justice_league():
-#     return jsonify(justice_league_members)
-
-# @app.route("/api/v1.0/justice-league/real_name/<real_name>")
-# def justice_league_real_name(real_name):
-#     standardized = real_name.replace(" ","").lower()
-#     for character in justice_league_members:
-#         search_term = character["real_name"].replace(" ","").lower()
-#         if search_term == standardized:
-#             return jsonify(character)
-#     return jsonify({"error":f"Character with real_name {real_name} not found."}),404
-
-# @app.route("/api/v1.0/justice-league/superhero/<superhero>")
-# def justice_league_superhero(superhero):
-#     standardized = superhero.replace(" ","").lower()
-#     for character in justice_league_members:
-#         search_term = character["superhero"].replace(" ","").lower()
-#         if search_term == standardized:
-#             return jsonify(character)
-#     return jsonify({"error":f"The superhero {superhero} was not found"}),404
-
-# if __name__ == "__main__":
-#     app.run(debug=True)
