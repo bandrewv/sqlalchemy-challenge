@@ -16,9 +16,28 @@ Base.prepare(engine,reflect=True)
 Measurement = Base.classes.measurement
 Station = Base.classes.station
 
-measurement_df = session.query(Measurement.date, Measurement.prcp).filter(Measurement.date > '2016-08-22').\
+measurement_dict = []
+measurement_query = session.query(Measurement.date, Measurement.prcp).filter(Measurement.date > '2016-08-22').\
 order_by(Measurement.date).all()
+for m in measurement_query:
+    measurement_dict.append({m[0]:m[1]})
 
+station_list = []
+station_query = session.query(Station.station, func.count(Measurement.date)).filter(Station.station == Measurement.station).\
+group_by(Station.station).order_by(func.count(Measurement.date).desc()).all()
+for s in station_query:
+    station_list.append(s[0])
+
+temp_list = []
+temp_query = session.query(Measurement.date, Measurement.tobs).filter(Measurement.date > '2016-08-22').\
+filter(Measurement.station.like('USC00519281')).order_by(Measurement.date).all()
+for t in temp_query:
+    temp_list.append(t[1])
+
+all_measurements_query = session.query(Measurement.date,Measurement.tobs).all()
+
+# all_measurements_query = session.query(Measurement.date,func.min(Measurement.tobs),func.avg(Measurement.tobs),func.max(Measurement.tobs)).\
+#     group_by(Measurement.date).all()
 
 app = Flask(__name__)
 
@@ -26,7 +45,7 @@ app = Flask(__name__)
 def home():
     print("Home page load successful.")
     return (
-        f"Welcome to the home page.<br/><br/>"
+        f"Welcome to the SQLAlchemy Assignment home page.<br/><br/>"
         f"To see Precipitation data, please click <a href='/api/v1.0/precipitation'>here</a><br/>"
         f"To see Station data, please click <a href='/api/v1.0/stations'>here</a><br/>"
         f"To see Temperature data, please click <a href='/api/v1.0/tobs'>here</a><br/>"
@@ -34,16 +53,50 @@ def home():
 
 @app.route("/api/v1.0/precipitation")
 def precipitation():
-    return jsonify(measurement_df)
+    return jsonify(measurement_dict)
 
 @app.route("/api/v1.0/stations")
 def station():
-    return "Welcome to the Station landing page."
+    return jsonify(station_list)
 
 @app.route("/api/v1.0/tobs")
 def tobs():
-    return "Welcome to the Temperature landing page."
+    return jsonify(temp_list)
 
+@app.route("/api/v1.0/<start>")
+def start_only(start):
+    start_date = start.replace("-","")
+    amq_list = []
+    for a in all_measurements_query:
+        standardized_date = a[0].replace("-","")
+        if start_date <= standardized_date:
+            amq_list.append(a[1])
+    minimum = min(amq_list)
+    total = sum(amq_list)
+    length = len(amq_list)
+    average = total/length
+    maximum = max(amq_list)
+    final_list = [minimum,average,maximum]
+    return jsonify(final_list)
+
+# @app.route("/api/v1.0/<start>")
+# def start_only(start):
+#     standardized_date = start.replace("-","")
+#     all_measurements_query = session.query(Measurement.date,Measurement.tobs).\
+#         filter(Measurement.date >= start).all()
+#     for a in all_measurements_query:
+#         search_term = a[0].replace("-","")
+#         if standardized_date == search_term:
+#             date_temp_list = []
+#             date_temp_list.append(a[1])
+#             date_temp_list.append(a[2])
+#             date_temp_list.append(a[3])
+#             return(
+#                 jsonify(date_temp_list)
+#                 # f"Starting from {start}, the minimum temp was {min_temp},<br/>"
+#                 # f"the average temp was {avg_temp}, and the max temp was {max_temp}."
+#             )
+#     return "Nope, didn't work..."
 
 if __name__ == "__main__":
     app.run(debug=True)
